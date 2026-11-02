@@ -1,0 +1,212 @@
+<Window x:Class="MouseHighlighter.SettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="마우스 강조 설정"
+        SizeToContent="WidthAndHeight" ResizeMode="NoResize"
+        WindowStartupLocation="CenterScreen"
+        FontFamily="Malgun Gothic" FontSize="13">
+
+    <Window.Resources>
+        <Style x:Key="SectionToggle" TargetType="CheckBox">
+            <Setter Property="FontSize" Value="15" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="Margin" Value="0,0,0,8" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="ToolTip" Value="체크를 풀면 이 효과를 끕니다" />
+        </Style>
+        <Style x:Key="RowLabel" TargetType="TextBlock">
+            <Setter Property="Width" Value="110" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+        <!-- 숫자 직접 입력 칸: Enter를 누르거나 다른 곳을 클릭하면 적용 -->
+        <Style x:Key="NumberBox" TargetType="TextBox">
+            <Setter Property="DockPanel.Dock" Value="Right" />
+            <Setter Property="Width" Value="48" />
+            <Setter Property="Margin" Value="8,0,0,0" />
+            <Setter Property="Padding" Value="2,1" />
+            <Setter Property="TextAlignment" Value="Right" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="InputMethod.IsInputMethodEnabled" Value="False" />
+            <EventSetter Event="PreviewKeyDown" Handler="OnNumberBoxKeyDown" />
+            <EventSetter Event="LostKeyboardFocus" Handler="OnNumberBoxLostFocus" />
+            <EventSetter Event="GotKeyboardFocus" Handler="OnNumberBoxGotFocus" />
+            <EventSetter Event="PreviewMouseLeftButtonDown" Handler="OnNumberBoxMouseDown" />
+        </Style>
+        <Style x:Key="Unit" TargetType="TextBlock">
+            <Setter Property="DockPanel.Dock" Value="Right" />
+            <Setter Property="Width" Value="18" />
+            <Setter Property="Margin" Value="3,0,0,0" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+        <Style TargetType="DockPanel">
+            <Setter Property="Margin" Value="0,5" />
+        </Style>
+        <Style TargetType="Slider">
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="IsMoveToPointEnabled" Value="True" />
+        </Style>
+        <Style x:Key="ColorButton" TargetType="Button">
+            <Setter Property="HorizontalAlignment" Value="Left" />
+            <Setter Property="Padding" Value="4" />
+            <Setter Property="ToolTip" Value="눌러서 색 고르기" />
+        </Style>
+        <Style x:Key="Swatch" TargetType="Border">
+            <Setter Property="Width" Value="56" />
+            <Setter Property="Height" Value="18" />
+            <Setter Property="BorderBrush" Value="#888" />
+            <Setter Property="BorderThickness" Value="1" />
+        </Style>
+        <!-- 클릭 테스트 배경색 선택: 색 상자 + 이름, 고른 것은 파란 테두리 -->
+        <Style x:Key="BackgroundChoice" TargetType="RadioButton">
+            <Setter Property="GroupName" Value="TestBackground" />
+            <Setter Property="Margin" Value="0,0,6,0" />
+            <Setter Property="Cursor" Value="Hand" />
+            <EventSetter Event="Checked" Handler="OnTestBackgroundChecked" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Border x:Name="Outer" BorderThickness="2" BorderBrush="Transparent"
+                                CornerRadius="4" Padding="3" Background="Transparent">
+                            <StackPanel>
+                                <Border Width="44" Height="26" Background="{TemplateBinding Background}"
+                                        BorderBrush="#888" BorderThickness="1" CornerRadius="2" />
+                                <TextBlock Text="{TemplateBinding Content}" FontSize="12"
+                                           HorizontalAlignment="Center" Margin="0,3,0,0" />
+                            </StackPanel>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Outer" Property="BorderBrush" Value="#0078D4" />
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Outer" Property="Background" Value="#EEE" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <!-- 왼쪽: 설정 / 오른쪽: 클릭 테스트 (펼쳤을 때만 보임, 창이 오른쪽으로 넓어짐) -->
+    <Grid>
+    <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="Auto" />
+        <ColumnDefinition Width="Auto" />
+    </Grid.ColumnDefinitions>
+
+    <StackPanel Grid.Column="0" Width="360" Margin="20,16,20,16">
+
+        <!-- 커서 주변 원 -->
+        <CheckBox x:Name="CircleEnabledCheck" Content="커서 강조" Style="{StaticResource SectionToggle}"
+                  Checked="OnToggleChanged" Unchecked="OnToggleChanged" />
+
+        <!-- 꺼져 있으면 아래 항목은 흐리게 -->
+        <StackPanel IsEnabled="{Binding IsChecked, ElementName=CircleEnabledCheck}">
+        <DockPanel>
+            <TextBlock Text="색" Style="{StaticResource RowLabel}" />
+            <Button Tag="Circle" Click="OnColorButtonClick" Style="{StaticResource ColorButton}">
+                <Border x:Name="CircleColorSwatch" Style="{StaticResource Swatch}" />
+            </Button>
+        </DockPanel>
+        <DockPanel>
+            <TextBlock Text="범위 (크기)" Style="{StaticResource RowLabel}" />
+            <TextBlock Text="px" Style="{StaticResource Unit}" />
+            <TextBox x:Name="CircleSizeBox" Style="{StaticResource NumberBox}"
+                     Tag="{Binding ElementName=CircleSizeSlider}" ToolTip="20 ~ 300" />
+            <Slider x:Name="CircleSizeSlider" Minimum="20" Maximum="300" ValueChanged="OnSliderChanged" />
+        </DockPanel>
+        <DockPanel>
+            <TextBlock Text="투명도" Style="{StaticResource RowLabel}" />
+            <TextBlock Text="%" Style="{StaticResource Unit}" />
+            <TextBox x:Name="CircleTransparencyBox" Style="{StaticResource NumberBox}"
+                     Tag="{Binding ElementName=CircleTransparencySlider}" ToolTip="0 ~ 100" />
+            <Slider x:Name="CircleTransparencySlider" Minimum="0" Maximum="100" ValueChanged="OnSliderChanged" />
+        </DockPanel>
+        </StackPanel>
+
+        <Separator Margin="0,12" />
+
+        <!-- 클릭 효과 -->
+        <CheckBox x:Name="ClickEnabledCheck" Content="클릭 효과" Style="{StaticResource SectionToggle}"
+                  Checked="OnToggleChanged" Unchecked="OnToggleChanged" />
+
+        <StackPanel IsEnabled="{Binding IsChecked, ElementName=ClickEnabledCheck}">
+        <DockPanel>
+            <TextBlock Text="왼쪽 클릭 색" Style="{StaticResource RowLabel}" />
+            <Button Tag="Left" Click="OnColorButtonClick" Style="{StaticResource ColorButton}">
+                <Border x:Name="LeftColorSwatch" Style="{StaticResource Swatch}" />
+            </Button>
+        </DockPanel>
+        <DockPanel>
+            <TextBlock Text="오른쪽 클릭 색" Style="{StaticResource RowLabel}" />
+            <Button Tag="Right" Click="OnColorButtonClick" Style="{StaticResource ColorButton}">
+                <Border x:Name="RightColorSwatch" Style="{StaticResource Swatch}" />
+            </Button>
+        </DockPanel>
+        <DockPanel>
+            <TextBlock Text="휠 클릭 색" Style="{StaticResource RowLabel}" />
+            <Button Tag="Middle" Click="OnColorButtonClick" Style="{StaticResource ColorButton}">
+                <Border x:Name="MiddleColorSwatch" Style="{StaticResource Swatch}" />
+            </Button>
+        </DockPanel>
+        <DockPanel>
+            <TextBlock Text="범위 (크기)" Style="{StaticResource RowLabel}" />
+            <TextBlock Text="px" Style="{StaticResource Unit}" />
+            <TextBox x:Name="RippleSizeBox" Style="{StaticResource NumberBox}"
+                     Tag="{Binding ElementName=RippleSizeSlider}" ToolTip="30 ~ 300" />
+            <Slider x:Name="RippleSizeSlider" Minimum="30" Maximum="300" ValueChanged="OnSliderChanged" />
+        </DockPanel>
+        <DockPanel>
+            <TextBlock Text="투명도" Style="{StaticResource RowLabel}" />
+            <TextBlock Text="%" Style="{StaticResource Unit}" />
+            <TextBox x:Name="RippleTransparencyBox" Style="{StaticResource NumberBox}"
+                     Tag="{Binding ElementName=RippleTransparencySlider}" ToolTip="0 ~ 100" />
+            <Slider x:Name="RippleTransparencySlider" Minimum="0" Maximum="100" ValueChanged="OnSliderChanged" />
+        </DockPanel>
+
+        <TextBlock Text="오른쪽 위 '클릭 테스트'를 누르면 배경색별로 잘 보이는지 확인할 수 있어요."
+                   Foreground="#777" FontSize="12" Margin="0,8,0,0" TextWrapping="Wrap" />
+        </StackPanel>
+
+        <DockPanel Margin="0,16,0,0">
+            <Button Content="기본값으로" Click="OnResetClick" Padding="12,4" />
+            <!-- 숫자 입력 후 Enter가 창을 닫지 않도록 IsDefault는 쓰지 않음 -->
+            <Button Content="닫기" Click="OnCloseClick" Padding="20,4" IsCancel="True"
+                    HorizontalAlignment="Right" />
+        </DockPanel>
+    </StackPanel>
+
+    <!-- 클릭 테스트 영역 -->
+    <DockPanel x:Name="TestPanel" Grid.Column="1" Width="320" Margin="0,16,20,16" Visibility="Collapsed">
+        <TextBlock DockPanel.Dock="Top" Text="클릭 테스트" FontSize="15" FontWeight="Bold" Margin="0,1,0,10" />
+
+        <!-- 아래쪽: 배경색 고르기 -->
+        <StackPanel DockPanel.Dock="Bottom" Margin="0,10,0,0">
+            <TextBlock Text="배경색" Foreground="#555" Margin="0,0,0,4" />
+            <StackPanel Orientation="Horizontal">
+                <RadioButton Content="노랑" Background="#FFE600" Style="{StaticResource BackgroundChoice}" />
+                <RadioButton Content="빨강" Background="#E53935" Style="{StaticResource BackgroundChoice}" />
+                <RadioButton Content="검정" Background="#000000" Style="{StaticResource BackgroundChoice}" />
+                <RadioButton Content="하양" Background="#FFFFFF" Style="{StaticResource BackgroundChoice}"
+                             IsChecked="True" />
+                <RadioButton Content="초록" Background="#43A047" Style="{StaticResource BackgroundChoice}" />
+            </StackPanel>
+        </StackPanel>
+
+        <!-- 이 안에서 클릭하면 실제 클릭 효과가 나타남 -->
+        <Border x:Name="TestArea" Background="#FFFFFF" BorderBrush="#999" BorderThickness="1" CornerRadius="4">
+            <TextBlock x:Name="TestHint" HorizontalAlignment="Center" VerticalAlignment="Center"
+                       TextAlignment="Center" Foreground="#555" LineHeight="22">
+                여기를 클릭해 보세요<LineBreak />
+                <Run FontSize="12">커서 강조와 클릭 효과가 잘 보이는지 확인</Run>
+            </TextBlock>
+        </Border>
+    </DockPanel>
+
+    <!-- 오른쪽 위 펼침/접기 버튼: 두 열에 걸쳐 있어서 펼치면 맨 오른쪽으로 이동 -->
+    <ToggleButton x:Name="TestToggle" Grid.Column="0" Grid.ColumnSpan="2"
+                  HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,14,20,0" Padding="10,3"
+                  Content="클릭 테스트 ▶" Checked="OnTestToggleChanged" Unchecked="OnTestToggleChanged" />
+    </Grid>
+</Window>

@@ -1,0 +1,8 @@
+# 빌드 중간 파일 (다시 만들 수 있음)
+bin/
+obj/
+.vs/
+*.user
+
+# 공유용 exe는 용량이 커서(약 72MB) 레포 대신 GitHub Releases에 올림
+MouseHighlighter.exe
