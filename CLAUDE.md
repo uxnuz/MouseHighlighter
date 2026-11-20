@@ -16,6 +16,6 @@ Windows tray app (C# / WPF, .NET 10) that highlights the mouse cursor and shows 
 - Never read files next to the exe. It ships as a single file, and `Assembly.Location` is empty there. Embed resources instead; persist only to `%AppData%\MouseHighlighter\settings.json`.
 - Don't set `PublishDir` to the project folder itself. The SDK then excludes all sources (error CS5001).
 - Overlay windows must derive from `OverlayWindow` and be positioned with `NativeMethods.CenterWindowAt` (physical pixels, PerMonitorV2). Don't use `Left`/`Top`.
-- Any `CompositionTarget.Rendering` subscription must be removed when its effect is off, or idle CPU stays at ~3%.
+- Cursor tracking uses a `DispatcherTimer` (`Settings.CursorUpdateIntervalMs`, default 33ms), not `CompositionTarget.Rendering`. Per-frame rendering kept the render loop busy even when the mouse was idle. Stop timers when an effect is off.
 - On/off decisions live only in `App.UpdateActiveState()`. After changing `Settings.Current`, call `Settings.NotifyChanged()`.
 - Keep the low-level mouse hook callback fast. A slow callback lags the mouse system-wide.

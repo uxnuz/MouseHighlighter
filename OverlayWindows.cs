@@ -2,6 +2,7 @@ using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Shapes;
+using System.Windows.Threading;
 
 namespace MouseHighlighter;
 
@@ -43,16 +44,21 @@ internal sealed class CursorCircleWindow : OverlayWindow
     private int _lastX = int.MinValue, _lastY = int.MinValue;   // 마지막으로 옮긴 커서 위치 (같으면 창을 안 옮김)
     private bool _active;
 
+    // 정해진 간격(Settings.CursorUpdateIntervalMs, 기본 33ms ≈ 초당 30회)마다 커서 위치를 확인합니다.
+    // 매 프레임(CompositionTarget.Rendering)마다 확인하면 WPF가 그리기 루프를 계속 돌려 CPU를 더 쓰기 때문입니다.
+    private readonly DispatcherTimer _timer = new(DispatcherPriority.Render);
+
     public CursorCircleWindow() : base(0)   // 크기는 ApplySettings()에서 설정값으로 정함
     {
         Content = _ellipse;
+        _timer.Tick += (_, _) => FollowCursor();
         ApplySettings();
         Settings.Changed += ApplySettings;   // 설정 화면에서 바꾸면 바로 반영
     }
 
     /// <summary>
-    /// 켜면 화면이 다시 그려질 때마다(보통 초당 60번) 커서 위치를 확인합니다.
-    /// 끄면 창을 숨기고 위치 확인도 완전히 멈춰서 CPU를 쓰지 않습니다.
+    /// 켜면 일정 간격으로 커서 위치를 확인해 원을 옮깁니다.
+    /// 끄면 창을 숨기고 타이머도 멈춰서 CPU를 쓰지 않습니다.
     /// </summary>
     public void SetActive(bool active)
     {
@@ -63,18 +69,14 @@ internal sealed class CursorCircleWindow : OverlayWindow
         {
             ResetPosition();
             Show();
-            CompositionTarget.Rendering += OnRendering;
+            _timer.Start();
         }
         else
         {
-            CompositionTarget.Rendering -= OnRendering;
+            _timer.Stop();
             Hide();
         }
     }
-
-    // CompositionTarget.Rendering: WPF가 화면을 그리기 직전마다 호출됩니다 (모니터 주사율에 맞춰 부드럽게 움직임).
-    // 구독하고 있는 동안에는 WPF가 계속 그리기 루프를 돌리므로, 끌 때 반드시 구독을 해제해야 CPU가 0이 됩니다.
-    private void OnRendering(object? sender, EventArgs e) => FollowCursor();
 
     /// <summary>설정값(색·크기·투명도)을 원에 적용합니다. Settings.Changed 때마다 호출됩니다.</summary>
     private void ApplySettings()
@@ -86,6 +88,7 @@ internal sealed class CursorCircleWindow : OverlayWindow
         // 테두리는 안쪽보다 진하게 해서 밝은 화면에서도 원이 잘 보이도록
         _ellipse.Stroke = new SolidColorBrush(Settings.ToColor(s.CircleColor, s.CircleOpacity * 2.5));
         _ellipse.StrokeThickness = s.CircleBorderThickness;
+        _timer.Interval = TimeSpan.FromMilliseconds(Math.Max(1, s.CursorUpdateIntervalMs));
         ResetPosition();   // 크기가 바뀌었으니 다음 프레임에 다시 가운데로
     }
 

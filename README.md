@@ -74,6 +74,7 @@ MouseHighlighter/
 ├─ NativeMethods.cs            ← Windows API 호출
 ├─ TrayIcon.cs                 ← 트레이 아이콘 이미지 만들기
 ├─ SettingsWindow.xaml(.cs)    ← 설정 창 (화면 배치 / 동작)
+├─ app.ico                     ← exe 아이콘
 ├─ app.manifest                ← 고해상도(DPI) 설정
 ├─ MouseHighlighter.csproj     ← 프로젝트 설정
 └─ Properties/PublishProfiles/Share.pubxml  ← 공유용 exe 만들기 설정

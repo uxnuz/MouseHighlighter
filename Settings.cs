@@ -32,6 +32,7 @@ public sealed class Settings
     public double CircleDiameter { get; set; } = 60;          // 원 지름 (DIP, 100% 배율 기준 픽셀)
     public double CircleOpacity { get; set; } = 0.3;          // 0 = 안 보임, 1 = 불투명 (테두리는 이보다 진하게)
     public double CircleBorderThickness { get; set; } = 2;
+    public int CursorUpdateIntervalMs { get; set; } = 33;     // 커서 위치 확인 간격 (33ms ≈ 초당 30회)
 
     // ── 클릭 효과 (물결) ──────────────────────────
     public bool ClickEffectEnabled { get; set; } = true;      // 끄면 마우스 훅도 해제
